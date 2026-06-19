@@ -1,0 +1,17 @@
+API Testing Project/
+│
+├── client/
+│   ├── __init__.py
+│   └── api_client.py
+│
+├── tests/
+│   ├── __init__.py
+│   └── test_httpbin.py
+│
+├── .env
+├── .gitignore
+├── config.py
+├── conftest.py
+├── pytest.ini
+├── README.md
+└── requirements.txt
