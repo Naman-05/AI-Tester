@@ -1,0 +1,203 @@
+{
+  "suites": [
+    {
+      "title": "loginTests/login.spec.ts",
+      "file": "loginTests/login.spec.ts",
+      "specs": [],
+      "suites": [
+        {
+          "title": "Login Page Tests",
+          "specs": [
+            {
+              "title": "TC001 - renders login form with email field",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 245}]}]
+            },
+            {
+              "title": "TC002 - renders login form with password field",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 198}]}]
+            },
+            {
+              "title": "TC003 - renders login form with submit button",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 167}]}]
+            },
+            {
+              "title": "TC004 - shows validation error when email is empty",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 456}]}]
+            },
+            {
+              "title": "TC005 - shows validation error when password is empty",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 398}]}]
+            },
+            {
+              "title": "TC006 - shows error for invalid email format",
+              "ok": false,
+              "tests": [{
+                "results": [{
+                  "status": "failed",
+                  "duration": 523,
+                  "errors": [{"message": "Error: expect(locator).toHaveText() // Expected: 'Please enter a valid email', Received: ''"}]
+                }]
+              }]
+            },
+            {
+              "title": "TC007 - shows error for invalid password format",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 289}]}]
+            },
+            {
+              "title": "TC008 - rejects login with incorrect password",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 654}]}]
+            },
+            {
+              "title": "TC009 - shows error message for incorrect password",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 456}]}]
+            },
+            {
+              "title": "TC010 - rejects login with unregistered email",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 745}]}]
+            },
+            {
+              "title": "TC011 - shows error for unregistered email",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 578}]}]
+            },
+            {
+              "title": "TC012 - login success with valid credentials",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 912}]}]
+            },
+            {
+              "title": "TC013 - redirects to dashboard after successful login",
+              "ok": false,
+              "tests": [{
+                "results": [{
+                  "status": "failed",
+                  "duration": 1356,
+                  "errors": [{"message": "TimeoutError: page.waitForURL: Timeout 60000ms exceeded. waiting for navigation to '**/dashboard'"}]
+                }]
+              }]
+            },
+            {
+              "title": "TC014 - persists session with remember-me checkbox",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 767}]}]
+            },
+            {
+              "title": "TC015 - remembers user email after session",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 689}]}]
+            },
+            {
+              "title": "TC016 - masks password input by default",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 245}]}]
+            },
+            {
+              "title": "TC017 - toggles password visibility on eye icon click",
+              "ok": false,
+              "tests": [{
+                "results": [{
+                  "status": "failed",
+                  "duration": 356,
+                  "errors": [{"message": "Error: expect(locator).toHaveAttribute() // Expected: 'type' to be 'text', Received: 'password'"}]
+                }]
+              }]
+            },
+            {
+              "title": "TC018 - shows password when eye icon is clicked",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 298}]}]
+            },
+            {
+              "title": "TC019 - disables submit button while request is in flight",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 578}]}]
+            },
+            {
+              "title": "TC020 - shows loading spinner during authentication",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 467}]}]
+            },
+            {
+              "title": "TC021 - rejects login with expired session token",
+              "ok": false,
+              "tests": [{
+                "results": [{
+                  "status": "failed",
+                  "duration": 993,
+                  "errors": [{"message": "Error: expect(received).toBe(expected) // Expected: 401, Received: 500"}]
+                }]
+              }]
+            },
+            {
+              "title": "TC022 - locks account after five failed attempts",
+              "ok": false,
+              "tests": [{
+                "results": [{
+                  "status": "failed",
+                  "duration": 1245,
+                  "errors": [{"message": "Error: expect(locator).toBeVisible() // Account lock message not displayed"}]
+                }]
+              }]
+            },
+            {
+              "title": "TC023 - shows account locked message after 5 failures",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 578}]}]
+            },
+            {
+              "title": "TC024 - shows captcha after three failed attempts",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 901}]}]
+            },
+            {
+              "title": "TC025 - captcha validation works correctly",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 689}]}]
+            },
+            {
+              "title": "TC026 - navigates to forgot-password page",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 245}]}]
+            },
+            {
+              "title": "TC027 - sends password reset email for valid account",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 1578}]}]
+            },
+            {
+              "title": "TC028 - shows reset email sent confirmation",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 467}]}]
+            },
+            {
+              "title": "TC029 - rejects login when account is deactivated",
+              "ok": true,
+              "tests": [{"results": [{"status": "passed", "duration": 689}]}]
+            },
+            {
+              "title": "TC030 - logs out and clears auth cookie",
+              "ok": false,
+              "tests": [{
+                "results": [{
+                  "status": "failed",
+                  "duration": 901,
+                  "errors": [{"message": "Error: expect(locator).not.toBeVisible() // Auth cookie still present after logout"}]
+                }]
+              }]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "stats": {"expected": 25, "unexpected": 5, "flaky": 0}
+}
