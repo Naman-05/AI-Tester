@@ -1,0 +1,25 @@
+[
+    {
+        "name": "",
+        "username": "Bret",
+        "email": "Sincere@april.biz"
+    },
+    {
+        "name": "Test User",
+        "username": "",
+        "email": "invalid-email"
+    },
+    {
+        "name": null,
+        "username": null,
+        "email": null
+    },
+    {
+        "name": "Test User",
+        "email": "Sincere@april.biz"
+    },
+    {
+        "username": "Bret",
+        "email": "Sincere@april.biz"
+    }
+]
