@@ -1,0 +1,5 @@
+# Step 1 - Activate environment
+langflow-env\Scripts\activate
+
+# Step 2 - Run
+langflow run
