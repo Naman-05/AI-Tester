@@ -211,3 +211,219 @@
   line-height: 1.7;
   white-space: pre-wrap;
 }
+
+/* ===================== */
+/* Spreadsheet Table View */
+/* ===================== */
+
+.view-toggle {
+  display: flex;
+  gap: 0.25rem;
+  background: #f7fafc;
+  padding: 0.25rem;
+  border-radius: 8px;
+}
+
+.toggle-btn {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: #718096;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+  background: #edf2f7;
+  color: #2d3748;
+}
+
+.toggle-btn.active {
+  background: white;
+  color: #0065ff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-weight: 600;
+}
+
+.spreadsheet-container {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: white;
+}
+
+.spreadsheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  table-layout: auto;
+}
+
+.spreadsheet-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.spreadsheet-table th {
+  background: linear-gradient(135deg, #1a1a2e, #2d3748);
+  color: white;
+  padding: 0.75rem 0.6rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+
+.spreadsheet-table th:last-child {
+  border-right: none;
+}
+
+.spreadsheet-table tbody tr {
+  border-bottom: 1px solid #edf2f7;
+  transition: background-color 0.15s ease;
+}
+
+.spreadsheet-table tbody tr:hover {
+  background-color: #ebf8ff;
+}
+
+.spreadsheet-table tbody tr.priority-high {
+  border-left: 3px solid #e53e3e;
+}
+
+.spreadsheet-table tbody tr.priority-medium {
+  border-left: 3px solid #d69e2e;
+}
+
+.spreadsheet-table td {
+  padding: 0.6rem;
+  vertical-align: top;
+  color: #2d3748;
+  border-right: 1px solid #edf2f7;
+}
+
+.spreadsheet-table td:last-child {
+  border-right: none;
+}
+
+.col-id {
+  width: 50px;
+  text-align: center;
+  font-weight: 700;
+  color: #0065ff;
+  background: #f7fafc;
+  font-size: 0.8rem;
+}
+
+.col-name {
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.case-name-cell {
+  font-weight: 600;
+  color: #1a1a2e;
+  display: block;
+}
+
+.col-type {
+  width: 100px;
+}
+
+.type-badge-table {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.type-badge-table.functional {
+  background: #ebf8ff;
+  color: #3182ce;
+}
+
+.type-badge-table.negative {
+  background: #fff5f5;
+  color: #c53030;
+}
+
+.type-badge-table.edge-case {
+  background: #fefcbf;
+  color: #975a16;
+}
+
+.type-badge-table.security {
+  background: #faf5ff;
+  color: #805ad5;
+}
+
+.type-badge-table.performance {
+  background: #f0fff4;
+  color: #2f855a;
+}
+
+.col-priority {
+  width: 90px;
+}
+
+.priority-badge-table {
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.col-preconditions {
+  min-width: 150px;
+  max-width: 200px;
+}
+
+.col-steps {
+  min-width: 250px;
+  max-width: 400px;
+}
+
+.steps-cell {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-size: 0.8rem;
+}
+
+.col-expected {
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.expected-cell {
+  color: #276749;
+  font-style: italic;
+  line-height: 1.6;
+  font-size: 0.8rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .spreadsheet-container {
+    font-size: 0.8rem;
+  }
+
+  .spreadsheet-table th,
+  .spreadsheet-table td {
+    padding: 0.5rem 0.4rem;
+  }
+
+  .col-name,
+  .col-preconditions,
+  .col-steps,
+  .col-expected {
+    min-width: 120px;
+  }
+}

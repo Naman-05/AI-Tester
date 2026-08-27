@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 import './TestPlanDisplay.css'
 
 function TestPlanDisplay({ testPlan, issueData, onExportMarkdown, onExportJSON }) {
+  const [viewMode, setViewMode] = useState('table') // 'table' or 'cards'
   const typeColors = {
     'Functional': '#3182ce',
     'Negative': '#c53030',
@@ -28,11 +29,28 @@ function TestPlanDisplay({ testPlan, issueData, onExportMarkdown, onExportJSON }
         </div>
         <div className="export-buttons">
           <button className="btn btn-export" onClick={onExportMarkdown}>
-            📄 Export Markdown
+            📄 Export MD
           </button>
           <button className="btn btn-export" onClick={onExportJSON}>
             📦 Export JSON
           </button>
+          {/* View Toggle */}
+          <div className="view-toggle">
+            <button
+              className={`toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+              onClick={() => setViewMode('table')}
+              title="Spreadsheet Table View"
+            >
+              📊 Table
+            </button>
+            <button
+              className={`toggle-btn ${viewMode === 'cards' ? 'active' : ''}`}
+              onClick={() => setViewMode('cards')}
+              title="Card View"
+            >
+              🃏 Cards
+            </button>
+          </div>
         </div>
       </div>
 
@@ -75,36 +93,86 @@ function TestPlanDisplay({ testPlan, issueData, onExportMarkdown, onExportJSON }
       {testPlan.testCases && testPlan.testCases.length > 0 && (
         <div className="plan-section cases">
           <h3>🧪 Test Cases ({testPlan.testCases.length})</h3>
-          <div className="cases-list">
-            {testPlan.testCases.map((tc) => (
-              <div key={tc.id} className="case-card">
-                <div className="case-header">
-                  <span className="case-id">TC-{tc.id}</span>
-                  <span className={`type-badge ${tc.type.toLowerCase().replace(' ', '-')}`}>
-                    {tc.type}
-                  </span>
-                  <span className="priority-badge">
-                    {priorityIcons[tc.priority] || '⚪'} {tc.priority}
-                  </span>
+          
+          {/* Spreadsheet Table View */}
+          {viewMode === 'table' && (
+            <div className="spreadsheet-container">
+              <table className="spreadsheet-table">
+                <thead>
+                  <tr>
+                    <th className="col-id">#</th>
+                    <th className="col-name">Test Case Name</th>
+                    <th className="col-type">Type</th>
+                    <th className="col-priority">Priority</th>
+                    <th className="col-preconditions">Preconditions</th>
+                    <th className="col-steps">Test Steps</th>
+                    <th className="col-expected">Expected Result</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {testPlan.testCases.map((tc, index) => (
+                    <tr key={tc.id} className={`spreadsheet-row ${tc.priority === 'High' ? 'priority-high' : tc.priority === 'Medium' ? 'priority-medium' : ''}`}>
+                      <td className="col-id">{tc.id}</td>
+                      <td className="col-name">
+                        <span className="case-name-cell">{tc.name}</span>
+                      </td>
+                      <td className="col-type">
+                        <span className={`type-badge-table ${tc.type.toLowerCase().replace(' ', '-')}`}>
+                          {tc.type}
+                        </span>
+                      </td>
+                      <td className="col-priority">
+                        <span className="priority-badge-table">
+                          {priorityIcons[tc.priority] || '⚪'} {tc.priority}
+                        </span>
+                      </td>
+                      <td className="col-preconditions">{tc.preconditions}</td>
+                      <td className="col-steps">
+                        <div className="steps-cell">{tc.steps}</div>
+                      </td>
+                      <td className="col-expected">
+                        <span className="expected-cell">{tc.expectedResult}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Card View */}
+          {viewMode === 'cards' && (
+            <div className="cases-list">
+              {testPlan.testCases.map((tc) => (
+                <div key={tc.id} className="case-card">
+                  <div className="case-header">
+                    <span className="case-id">TC-{tc.id}</span>
+                    <span className={`type-badge ${tc.type.toLowerCase().replace(' ', '-')}`}>
+                      {tc.type}
+                    </span>
+                    <span className="priority-badge">
+                      {priorityIcons[tc.priority] || '⚪'} {tc.priority}
+                    </span>
+                  </div>
+                  <h4 className="case-name">{tc.name}</h4>
+                  <div className="case-details">
+                    <div className="detail-row">
+                      <span className="detail-label">Preconditions:</span>
+                      <span className="detail-value">{tc.preconditions}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Steps:</span>
+                      <span className="detail-value steps">{tc.steps}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Expected Result:</span>
+                      <span className="detail-value expected">{tc.expectedResult}</span>
+                    </div>
+                  </div>
                 </div>
-                <h4 className="case-name">{tc.name}</h4>
-                <div className="case-details">
-                  <div className="detail-row">
-                    <span className="detail-label">Preconditions:</span>
-                    <span className="detail-value">{tc.preconditions}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Steps:</span>
-                    <span className="detail-value steps">{tc.steps}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Expected Result:</span>
-                    <span className="detail-value expected">{tc.expectedResult}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

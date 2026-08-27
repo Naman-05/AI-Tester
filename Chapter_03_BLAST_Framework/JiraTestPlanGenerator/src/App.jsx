@@ -1,5 +1,44 @@
 import React, { useState, useEffect } from 'react'
 
+// Helper to safely render JIRA description (handles rich text objects)
+const getDescriptionText = (issueData) => {
+  if (!issueData?.fields?.description) return null
+  
+  const desc = issueData.fields.description
+  
+  // Case 1: Plain string description
+  if (typeof desc === 'string') return desc.trim() || null
+  
+  // Case 2: JIRA rich text format (type: "doc")
+  if (desc && typeof desc === 'object' && desc.type === 'doc' && desc.content) {
+    const extractText = (node) => {
+      if (!node) return ''
+      if (typeof node === 'string') return node
+      if (typeof node !== 'object') return ''
+      
+      if (node.type === 'text' && node.text) return node.text
+      if (node.content) return node.content.map(extractText).filter(t => t.trim()).join('\n')
+      if (node.listType === 'bullet' || node.listType === 'ordered') {
+        const prefix = node.listType === 'ordered' ? '1.' : '•'
+        return node.content?.map(extractText).filter(t => t.trim()).join('\n') || ''
+      }
+      if (node.type === 'codeBlock' && node.text) return `Code:\n${node.text}`
+      return ''
+    }
+    
+    const text = desc.content.map(extractText).filter(t => t.trim()).join('\n\n')
+    return text || null
+  }
+  
+  // Case 3: Direct text type
+  if (desc.type === 'text' && desc.text) return desc.text.trim() || null
+  
+  // Case 4: Unknown object format - try to extract any text property
+  if (desc.text) return String(desc.text).trim() || null
+  
+  return null
+}
+
 function App() {
   const [settings, setSettings] = useState({
     jiraEmail: '',
@@ -14,6 +53,7 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState('input')
+  const [viewMode, setViewMode] = useState('table') // 'table' or 'cards' for test cases view
 
   useEffect(() => {
     const saved = localStorage.getItem('jiraTestPlanSettings')
@@ -74,26 +114,84 @@ Return ONLY valid JSON with this structure:
 
 Generate 8-12 detailed test cases.`
 
-      const response = await fetch('http://localhost:3002/api/groq/generate', {
+      const response = await fetch('/api/groq/generate', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${settings.groqApiKey}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: prompt,
-          model: settings.groqModel
+          model: settings.groqModel,
+          messages: [
+            { role: 'system', content: 'You are an expert QA engineer.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 4096
         }),
       })
-      if (!response.ok) throw new Error(`GROQ API Error: ${response.status}`)
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`GROQ API Error: ${response.status} - ${errorText}`)
+      }
       const data = await response.json()
-      const content = data.choices?.[0]?.message?.content || ''
+      let content = data.choices?.[0]?.message?.content || ''
+      
+      console.log('Raw GROQ content type:', typeof content)
+      console.log('Raw GROQ content:', content)
+      
+      // The GROQ API may return JSON as an escaped string - parse it first if needed
+      if (typeof content === 'string' && content.trim().startsWith('{')) {
+        try {
+          // Try to parse the content as JSON directly
+          const directParse = JSON.parse(content)
+          if (directParse && typeof directParse === 'object') {
+            content = JSON.stringify(directParse) // Keep as stringified for consistency
+            console.log('Content parsed as JSON object:', directParse)
+          }
+        } catch {
+          // Not a JSON string, continue with regex extraction
+        }
+      }
+      
       let parsedPlan
       try {
-        const jsonMatch = content.match(/\{[\s\S]*\}/)
-        parsedPlan = jsonMatch ? JSON.parse(jsonMatch[0]) : null
-      } catch {
-        parsedPlan = { title: `Test Plan for ${issueData.fields.summary}`, issueKey: issueData.key, summary: issueData.fields.summary, testStrategy: '', testCases: [], edgeCases: [], negativeTestCases: [], securityConsiderations: [], performanceTests: [], notes: content }
+        // Better JSON extraction that handles nested braces
+        const jsonMatch = content.match(/\{[\s\S]*"testCases"[\s\S]*\}/)
+        if (jsonMatch) {
+          parsedPlan = JSON.parse(jsonMatch[0])
+          console.log('Parsed test plan:', parsedPlan)
+        } else {
+          // Fallback: try to find any valid JSON object
+          const fallbackMatch = content.match(/\{[\s\S]*\}/)
+          if (fallbackMatch) {
+            parsedPlan = JSON.parse(fallbackMatch[0])
+            console.log('Fallback parsed test plan:', parsedPlan)
+          } else {
+            throw new Error('No JSON found in response')
+          }
+        }
+      } catch (parseErr) {
+        console.error('JSON parse error:', parseErr)
+        // Create a fallback test plan with the raw content
+        parsedPlan = {
+          title: `Test Plan for ${issueData.fields.summary}`,
+          issueKey: issueData.key,
+          summary: issueData.fields.summary,
+          testStrategy: '',
+          testCases: [],
+          edgeCases: [],
+          negativeTestCases: [],
+          securityConsiderations: [],
+          performanceTests: [],
+          notes: content || 'No test cases were generated. Please try again.',
+          _rawContent: content // Store raw content for debugging
+        }
       }
+      
+      console.log('Final testPlan state:', parsedPlan)
       setTestPlan(parsedPlan)
+      // Automatically switch to the test plan tab after successful generation
+      setActiveTab('plan')
     } catch (err) {
+      console.error('Generate test plan error:', err)
       setError(`Failed to generate test plan: ${err.message}`)
       setTestPlan(null)
     } finally { setLoading(false) }
@@ -166,8 +264,8 @@ Generate 8-12 detailed test cases.`
             {!issueData && !loading && (
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.85rem', color: '#718096' }}>Quick Actions:</span>
-                <button onClick={() => { setIssueKey('KAN-9'); fetchIssue('KAN-9') }} style={{ padding: '0.5rem 1rem', background: '#edf2f7', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>KAN-9</button>
-                <button onClick={() => { setIssueKey('VWO48'); fetchIssue('VWO48') }} style={{ padding: '0.5rem 1rem', background: '#edf2f7', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>VWO48</button>
+                <button onClick={() => { setIssueKey('SAM1-10'); fetchIssue('SAM1-10') }} style={{ padding: '0.5rem 1rem', background: '#edf2f7', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>SAM1-10</button>
+                <button onClick={() => { setIssueKey('SAM1-9'); fetchIssue('SAM1-9') }} style={{ padding: '0.5rem 1rem', background: '#edf2f7', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>SAM1-9</button>
               </div>
             )}
 
@@ -182,10 +280,10 @@ Generate 8-12 detailed test cases.`
                     </div>
                   ))}
                 </div>
-                {issueData.fields.description && (
+                {getDescriptionText(issueData) && (
                   <div style={{ background: '#f7fafc', borderLeft: '3px solid #0065ff', padding: '1rem', borderRadius: '0 8px 8px 0', marginBottom: '0.5rem' }}>
                     <h4 style={{ fontSize: '0.85rem', color: '#4a5568', marginBottom: '0.3rem' }}>Description:</h4>
-                    <p style={{ fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{issueData.fields.description}</p>
+                    <p style={{ fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>{getDescriptionText(issueData)}</p>
                   </div>
                 )}
                 <button onClick={generateTestPlan} disabled={loading} style={{ width: '100%', marginTop: '1rem', padding: '1rem', background: 'linear-gradient(135deg, #7c3aed, #a855f7)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '1.05rem', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1 }}>
@@ -224,22 +322,70 @@ Generate 8-12 detailed test cases.`
               </div>
             )}
 
-            {testPlan.testCases?.map(tc => (
-              <div key={tc.id} style={{ background: 'white', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span style={{ background: '#0065ff', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700 }}>TC-{tc.id}</span>
-                  <span style={{ padding: '0.15rem 0.6rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 600, background: tc.type === 'Functional' ? '#ebf8ff' : tc.type === 'Negative' ? '#fff5f5' : tc.type === 'Security' ? '#faf5ff' : '#fefcbf', color: tc.type === 'Functional' ? '#3182ce' : tc.type === 'Negative' ? '#c53030' : tc.type === 'Security' ? '#805ad5' : '#975a16' }}>{tc.type}</span>
-                  <span style={{ marginLeft: 'auto', fontSize: '0.75rem', fontWeight: 600 }}>{tc.priority === 'High' ? '🔴' : tc.priority === 'Medium' ? '🟡' : '🟢'} {tc.priority}</span>
+            {/* Test Cases with View Toggle */}
+            {testPlan.testCases && testPlan.testCases.length > 0 && (
+              <div style={{ background: 'white', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 style={{ marginBottom: '0' }}>🧪 Test Cases ({testPlan.testCases.length})</h3>
+                  <div style={{ display: 'flex', gap: '0.25rem', background: '#f7fafc', padding: '0.25rem', borderRadius: '8px' }}>
+                    <button onClick={() => setViewMode('table')} style={{ padding: '0.4rem 0.8rem', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: viewMode === 'table' ? 600 : 500, cursor: 'pointer', background: viewMode === 'table' ? 'white' : 'transparent', color: viewMode === 'table' ? '#0065ff' : '#718096', boxShadow: viewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>📊 Table</button>
+                    <button onClick={() => setViewMode('cards')} style={{ padding: '0.4rem 0.8rem', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: viewMode === 'cards' ? 600 : 500, cursor: 'pointer', background: viewMode === 'cards' ? 'white' : 'transparent', color: viewMode === 'cards' ? '#0065ff' : '#718096', boxShadow: viewMode === 'cards' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>🃏 Cards</button>
+                  </div>
                 </div>
-                <h4 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>{tc.name}</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem' }}>
-                  <div><strong>Preconditions:</strong> {tc.preconditions}</div>
-                  <div><strong>Steps:</strong></div>
-                  <div style={{ whiteSpace: 'pre-wrap', paddingLeft: '1rem' }}>{tc.steps}</div>
-                  <div><strong>Expected Result:</strong> <em>{tc.expectedResult}</em></div>
-                </div>
+                
+                {/* Spreadsheet Table View */}
+                {viewMode === 'table' && (
+                  <div style={{ overflowX: 'auto', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                      <thead>
+                        <tr style={{ background: 'linear-gradient(135deg, #1a1a2e, #2d3748)' }}>
+                          <th style={{ padding: '0.75rem 0.6rem', color: 'white', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>#</th>
+                          <th style={{ padding: '0.75rem 0.6rem', color: 'white', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>Test Case Name</th>
+                          <th style={{ padding: '0.75rem 0.6rem', color: 'white', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>Type</th>
+                          <th style={{ padding: '0.75rem 0.6rem', color: 'white', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>Priority</th>
+                          <th style={{ padding: '0.75rem 0.6rem', color: 'white', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>Preconditions</th>
+                          <th style={{ padding: '0.75rem 0.6rem', color: 'white', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>Test Steps</th>
+                          <th style={{ padding: '0.75rem 0.6rem', color: 'white', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Expected Result</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {testPlan.testCases.map((tc) => (
+                          <tr key={tc.id} style={{ borderBottom: '1px solid #edf2f7', transition: 'background-color 0.15s ease', borderLeft: tc.priority === 'High' ? '3px solid #e53e3e' : tc.priority === 'Medium' ? '3px solid #d69e2e' : 'none' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ebf8ff'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                            <td style={{ padding: '0.6rem', fontWeight: 700, color: '#0065ff', background: '#f7fafc', textAlign: 'center' }}>{tc.id}</td>
+                            <td style={{ padding: '0.6rem', fontWeight: 600, color: '#1a1a2e' }}>{tc.name}</td>
+                            <td style={{ padding: '0.6rem' }}>
+                              <span style={{ padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', background: tc.type === 'Functional' ? '#ebf8ff' : tc.type === 'Negative' ? '#fff5f5' : tc.type === 'Security' ? '#faf5ff' : '#fefcbf', color: tc.type === 'Functional' ? '#3182ce' : tc.type === 'Negative' ? '#c53030' : tc.type === 'Security' ? '#805ad5' : '#975a16' }}>{tc.type}</span>
+                            </td>
+                            <td style={{ padding: '0.6rem', fontSize: '0.75rem', fontWeight: 600 }}>{tc.priority === 'High' ? '🔴' : tc.priority === 'Medium' ? '🟡' : '🟢'} {tc.priority}</td>
+                            <td style={{ padding: '0.6rem', maxWidth: '200px' }}>{tc.preconditions}</td>
+                            <td style={{ padding: '0.6rem', whiteSpace: 'pre-wrap', lineHeight: 1.6, fontSize: '0.8rem' }}>{tc.steps}</td>
+                            <td style={{ padding: '0.6rem', color: '#276749', fontStyle: 'italic', lineHeight: 1.6, fontSize: '0.8rem' }}>{tc.expectedResult}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Card View */}
+                {viewMode === 'cards' && testPlan.testCases.map((tc) => (
+                  <div key={tc.id} style={{ background: '#f7fafc', borderRadius: '10px', padding: '1rem', marginBottom: '0.75rem', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <span style={{ background: '#0065ff', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700 }}>TC-{tc.id}</span>
+                      <span style={{ padding: '0.15rem 0.6rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 600, background: tc.type === 'Functional' ? '#ebf8ff' : tc.type === 'Negative' ? '#fff5f5' : tc.type === 'Security' ? '#faf5ff' : '#fefcbf', color: tc.type === 'Functional' ? '#3182ce' : tc.type === 'Negative' ? '#c53030' : tc.type === 'Security' ? '#805ad5' : '#975a16' }}>{tc.type}</span>
+                      <span style={{ marginLeft: 'auto', fontSize: '0.75rem', fontWeight: 600 }}>{tc.priority === 'High' ? '🔴' : tc.priority === 'Medium' ? '🟡' : '🟢'} {tc.priority}</span>
+                    </div>
+                    <h4 style={{ fontSize: '1rem', marginBottom: '0.5rem', color: '#2d3748' }}>{tc.name}</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem' }}>
+                      <div><strong>Preconditions:</strong> {tc.preconditions}</div>
+                      <div><strong>Steps:</strong></div>
+                      <div style={{ whiteSpace: 'pre-wrap', paddingLeft: '1rem' }}>{tc.steps}</div>
+                      <div><strong>Expected Result:</strong> <em>{tc.expectedResult}</em></div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
 
             {testPlan.edgeCases?.length > 0 && (
               <div style={{ background: 'white', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
