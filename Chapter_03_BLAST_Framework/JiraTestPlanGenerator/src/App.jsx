@@ -69,16 +69,29 @@ function App() {
     setLoading(true)
     setError('')
     try {
-      // Use Vite dev server proxy on port 3000 — auth is handled server-side
-      const url = `/api/jira/issue/${key}`
+      // Direct JIRA API call with hardcoded credentials for Vercel deployment
+      const jiraEmail = 'namansinghal.jira@gmail.com'
+      const jiraToken = 'ATATT3xFfGF0DseA8WKuYDq6-mmMQDHzEv0tJR4vWtKh7-q2sbDyZefgVXjEvwd6W07nb3NLRCEbqdeXfqGHpL8xlY4UXInceaRD0NwxNYOU6YHzHBeClEH48EMix8UznB6owErKusZ4x7UHJoXcDiasYPhGz4KoVStyrzy9--FaIwtiWVT8h-8=042B741A'
+      const jiraBaseUrl = 'https://namansinghaljira.atlassian.net/'
+      
+      const auth = Buffer.from(`${jiraEmail}:${jiraToken}`).toString('base64')
+      const url = `${jiraBaseUrl}rest/api/3/issue/${key}`
+      
+      console.log('Fetching JIRA issue:', url)
+      
       const response = await fetch(url, {
         method: 'GET',
-        headers: { Accept: 'application/json' },
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Basic ${auth}`,
+        },
       })
+      
       if (!response.ok) throw new Error(`JIRA API Error: ${response.status}`)
       const data = await response.json()
       setIssueData(data)
     } catch (err) {
+      console.error('Fetch issue error:', err)
       setError(`Failed to fetch issue: ${err.message}`)
       setIssueData(null)
     } finally { setLoading(false) }
@@ -114,11 +127,18 @@ Return ONLY valid JSON with this structure:
 
 Generate 8-12 detailed test cases.`
 
-      const response = await fetch('/api/groq/generate', {
+      const groqApiKey = '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'
+      
+      console.log('Calling GROQ API...')
+      
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
-          model: settings.groqModel,
+          model: settings.groqModel || 'openai/gpt-oss-120b',
           messages: [
             { role: 'system', content: 'You are an expert QA engineer.' },
             { role: 'user', content: prompt }
