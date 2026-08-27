@@ -1,0 +1,10 @@
+{
+  "buildCommand": "cd Chapter_03_BLAST_Framework/JiraTestPlanGenerator && npm install && npm run build",
+  "outputDirectory": "Chapter_03_BLAST_Framework/JiraTestPlanGenerator/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
