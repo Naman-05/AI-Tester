@@ -1,0 +1,16 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "devCommand": "npm run dev",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" }
+  ],
+  "functions": {
+    "api/groq/generate.js": {
+      "runtime": "vercel-node@next"
+    },
+    "api/jira/[key].js": {
+      "runtime": "vercel-node@next"
+    }
+  }
+}
