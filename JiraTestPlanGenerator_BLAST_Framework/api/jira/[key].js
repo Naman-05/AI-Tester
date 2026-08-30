@@ -1,5 +1,3 @@
-import { NextResponse } from 'next/server';
-
 export const config = {
   api: {
     bodyParser: true,
@@ -8,17 +6,23 @@ export const config = {
 
 export default async function handler(req) {
   if (req.method !== 'GET') {
-    return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { 
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   try {
-    const key = req.nextUrl.pathname.split('/').pop();
+    const key = req.url.split('/').pop();
     const email = process.env.JIRA_EMAIL;
     const token = process.env.JIRA_TOKEN;
     const baseUrl = process.env.JIRA_BASE_URL || 'https://namansinghaljira.atlassian.net/';
     
     if (!email || !token) {
-      return NextResponse.json({ error: 'JIRA credentials not configured' }, { status: 500 });
+      return new Response(JSON.stringify({ error: 'JIRA credentials not configured' }), { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
     
     const auth = Buffer.from(`${email}:${token}`).toString('base64');
@@ -35,18 +39,18 @@ export default async function handler(req) {
     }
     
     const data = await response.json();
-    return NextResponse.json(data);
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
     console.error('JIRA API Error:', error);
-    
-    if (!response.ok) {
-      throw new Error(`JIRA API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('JIRA API Error:', error);
+    return new Response(JSON.stringify({ error: error.message }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
     
     if (!response.ok) {
       throw new Error(`JIRA API error: ${response.status}`);

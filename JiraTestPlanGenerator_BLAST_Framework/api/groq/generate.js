@@ -4,17 +4,23 @@ export const config = {
   },
 };
 
-export default async function handler(req, res) {
+export default async function handler(req) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { 
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   try {
-    const { prompt, model } = req.body;
+    const { prompt, model } = await req.json();
     const apiKey = process.env.GROQ_KEY;
     
     if (!apiKey) {
-      return res.status(500).json({ error: 'GROQ API key not configured' });
+      return new Response(JSON.stringify({ error: 'GROQ API key not configured' }), { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
     
     const response = await fetch(
@@ -43,9 +49,16 @@ export default async function handler(req, res) {
     }
     
     const data = await response.json();
-    return res.status(200).json(data);
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
     console.error('GROQ API Error:', error);
-    return res.status(500).json({ error: 'Failed to generate test plan' });
+    return new Response(JSON.stringify({ error: 'Failed to generate test plan' }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
+}
 }
