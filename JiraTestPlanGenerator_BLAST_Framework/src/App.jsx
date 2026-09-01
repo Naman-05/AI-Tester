@@ -68,33 +68,70 @@ function App() {
   const fetchIssue = async (key) => {
     setLoading(true)
     setError('')
+    
+    // Validate ticket ID format before fetching
+    if (!key || key.trim() === '') {
+      setError('Please enter a valid JIRA issue key.')
+      setLoading(false)
+      return
+    }
+    
+    // Basic validation: JIRA keys should match pattern like PROJECT-123 (allows digits in project code, e.g., SAM1-9)
+    const jiraKeyPattern = /^[A-Z0-9]+-\d+$/i
+    if (!jiraKeyPattern.test(key.trim())) {
+      setError(`Invalid JIRA issue key format. Expected format: PROJECT-123 (e.g., SAM1-9, KAN-1)`)
+      setLoading(false)
+      return
+    }
+    
     try {
-      // Direct JIRA API call with hardcoded credentials for Vercel deployment
-      const jiraEmail = 'namansinghal.jira@gmail.com'
-      const jiraToken = 'ATATT3xFfGF0DseA8WKuYDq6-mmMQDHzEv0tJR4vWtKh7-q2sbDyZefgVXjEvwd6W07nb3NLRCEbqdeXfqGHpL8xlY4UXInceaRD0NwxNYOU6YHzHBeClEH48EMix8UznB6owErKusZ4x7UHJoXcDiasYPhGz4KoVStyrzy9--FaIwtiWVT8h-8=042B741A'
-      const jiraBaseUrl = 'https://namansinghaljira.atlassian.net/'
-      
-      const auth = Buffer.from(`${jiraEmail}:${jiraToken}`).toString('base64')
-      const url = `${jiraBaseUrl}rest/api/3/issue/${key}`
-      
-      console.log('Fetching JIRA issue:', url)
-      
-      const response = await fetch(url, {
+      // Call local Express proxy to avoid CORS issues
+      const response = await fetch(`/api/jira/issue/${key.trim()}`, {
         method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Basic ${auth}`,
-        },
+        headers: { Accept: 'application/json' },
       })
       
-      if (!response.ok) throw new Error(`JIRA API Error: ${response.status}`)
+      if (!response.ok) {
+        let errorMessage = ''
+        
+        try {
+          const errData = await response.json()
+          
+          // Handle specific JIRA API error codes
+          if (response.status === 401 || response.status === 403) {
+            errorMessage = 'Authentication failed. Please check your JIRA credentials in the Settings panel.'
+          } else if (response.status === 404) {
+            errorMessage = `JIRA issue "${key.trim()}" not found. Please verify the issue key and try again.`
+          } else if (response.status === 429) {
+            errorMessage = 'Too many requests. Please wait a moment and try again.'
+          } else if (errData.errorMessages && errData.errorMessages.length > 0) {
+            errorMessage = `JIRA Error: ${errData.errorMessages.join(', ')}`
+          } else if (errData.error && typeof errData.error === 'string') {
+            errorMessage = `JIRA Error: ${errData.error}`
+          } else {
+            errorMessage = `JIRA API Error (${response.status}): Unable to fetch issue. Please check your connection and credentials.`
+          }
+        } catch (parseError) {
+          // If we can't parse the error response, provide a generic message
+          if (response.status === 0) {
+            errorMessage = 'Network error: Unable to connect to JIRA. Please check your internet connection.'
+          } else {
+            errorMessage = `JIRA API Error (${response.status}): An unexpected error occurred.`
+          }
+        }
+        
+        throw new Error(errorMessage)
+      }
+      
       const data = await response.json()
       setIssueData(data)
     } catch (err) {
       console.error('Fetch issue error:', err)
       setError(`Failed to fetch issue: ${err.message}`)
       setIssueData(null)
-    } finally { setLoading(false) }
+    } finally { 
+      setLoading(false) 
+    }
   }
 
   const generateTestPlan = async () => {
