@@ -164,7 +164,7 @@ Return ONLY valid JSON with this structure:
 
 Generate 8-12 detailed test cases.`
 
-      const groqApiKey = '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'
+      const groqApiKey = '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'
       
       console.log('Calling GROQ API...')
       

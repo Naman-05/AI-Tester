@@ -32,7 +32,7 @@ AI Tester/
 │   ├── progress.md                       # Milestone tracking log
 │   └── task_plan.md                      # Task breakdown & plan
 │
-├── chapter_05_AI_Agents_LangFlow/         # LangFlow AI Agent projects
+├── Chapter_05_AI_Agents_LangFlow/         # LangFlow AI Agent projects
 │   ├── Projects/                         # LangFlow workflow JSON files
 │   │   ├── LF_Project_1_Hello_World.json     # Starter LangFlow workflow
 │   │   └── LF_Project_2_Flaky_Test_AI_Agent.json  # Flaky test AI agent workflow
@@ -41,7 +41,7 @@ AI Tester/
 │
 ├── JiraTestPlanGenerator_BLAST_Framework/ # React + Vite app for Jira test plans
 │   ├── src/                              # Source code (React components)
-│   │   ├── App.jsx                       # Main application component (~33 KB)
+│   │   ├── App.jsx                       # Main application component
 │   │   ├── App.css                       # Application styles
 │   │   ├── index.css                     # Global styles
 │   │   └── main.jsx                      # React entry point
@@ -97,7 +97,7 @@ AI Tester/
 | `task_plan.md` | Detailed task breakdown plan for this chapter. |
 | `.env` | Environment variables (API keys, config) for framework execution. |
 
-### chapter_05_AI_Agents_LangFlow
+### Chapter_05_AI_Agents_LangFlow
 **Purpose:** Exploring LangFlow as a visual tool for building AI-powered testing agents and workflows.
 
 | File/Folder | Description |
@@ -111,10 +111,10 @@ AI Tester/
 
 | Component | Description |
 |---|---|
-| `src/App.jsx` | Main React component (~33 KB) — core UI logic for test plan generation, likely includes form inputs for Jira issue details and output display. |
+| `src/App.jsx` | Main React component — core UI logic for test plan generation, likely includes form inputs for Jira issue details and output display. |
 | `src/App.css` / `index.css` / `main.jsx` | Styling and React entry point. |
 | `api/` | API route definitions or documentation for backend endpoints. |
-| `server.js` | Node.js server handling the test plan generation logic (2.6 KB). |
+| `server.js` | Node.js server handling the test plan generation logic. |
 | `dist/index.html` | Production build output — served on Vercel. |
 | `vercel.json` | Deployment configuration for Vercel hosting. |
 
@@ -158,4 +158,4 @@ AI Tester/
 
 ---
 
-*Last updated: 2026-01-09*
+*Last updated: 2026-09-01*
