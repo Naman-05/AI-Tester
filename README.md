@@ -2,6 +2,39 @@
 
 A comprehensive learning repository for AI-powered testing, prompt engineering, and quality assurance automation. This repo contains practice projects, frameworks, and tools explored across multiple chapters focused on modern AI-assisted QA methodologies.
 
+> **For AI Agents**: See [AGENTS.md](AGENTS.md) for build commands, architecture patterns, and key conventions.
+
+---
+
+## 🚀 Quick Start
+
+### Python API Testing (Chapter 02)
+```bash
+# Practice 1 - Basic API Testing
+cd "Chapter_02_Prompt_Engineering_1/Practice_1_API Testing Project"
+pip install -r requirements.txt
+pytest
+
+# Practice 2 - Structured Framework (Page Object Model)
+cd "Chapter_02_Prompt_Engineering_1/Practice_2_API_Testing_Framework"
+pip install -r requirements.txt
+pytest -v --tb=long -s
+```
+
+### Jira Test Plan Generator (React + Node.js)
+```bash
+cd JiraTestPlanGenerator_BLAST_Framework
+npm install
+npm run dev      # Development server (Vite)
+npm run build    # Production build
+```
+
+### LangFlow AI Agents
+```bash
+# See Commands_Start Langflow_CLI.txt for CLI startup
+# Import JSON workflows from Chapter_05_AI_Agents_LangFlow/Projects/
+```
+
 ---
 
 ## 📂 Directory Structure & Overview
@@ -9,6 +42,7 @@ A comprehensive learning repository for AI-powered testing, prompt engineering, 
 ```
 AI Tester/
 ├── README.md                          # This file — project overview
+├── AGENTS.md                          # AI agent instructions (build cmds, patterns, conventions)
 ├── .gitignore                         # Git ignore rules for Python/Vercel/etc.
 ├── extract_pdf_text.py               # Python script for PDF text extraction
 ├── Commands_Start Langflow_CLI.txt   # CLI startup commands for LangFlow
@@ -127,6 +161,7 @@ AI Tester/
 
 | File | Description |
 |---|---|
+| `AGENTS.md` | AI agent instructions — build commands, architecture patterns, conventions |
 | `extract_pdf_text.py` | Python script for extracting text content from PDF files (used with Project_1_TC_Gen's Restful-booker.pdf). |
 | `Commands_Start Langflow_CLI.txt` | CLI commands and instructions for starting LangFlow from the command line. |
 | `Open Source and Close Source Models.png` | Reference diagram comparing open-source vs. proprietary AI models. |
@@ -158,4 +193,4 @@ AI Tester/
 
 ---
 
-*Last updated: 2026-09-01*
+*Last updated: 2026-09-04*
